@@ -16,6 +16,9 @@ lights while the button is pressed. See `PLAN.md` for phases and design decision
 
 ## Firmware commands (run from `firmware/`)
 
+Use `~/.platformio/penv/bin/pio` (Python 3.11). The Homebrew `pio` runs on Python 3.15, which the
+pioarduino platform rejects. Examples below say `pio` for brevity.
+
 ```bash
 pio run -e xiao_esp32c6              # build (also: xiao_esp32s3)
 pio run -e xiao_esp32c6 -t upload    # flash
@@ -40,4 +43,5 @@ pio test -e native                   # host unit tests, no hardware needed
 
 ## Status
 
-Planning only. Nothing has been built or flashed yet; see `PLAN.md` Phase 0.
+Phase 1 code written: builds for C6 and S3, 18 host tests pass. Not yet flashed or tested with the
+real encoder. Pins: A=D3, B=D4, SW=D5 (`docs/wiring.md`).

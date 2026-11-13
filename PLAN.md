@@ -39,8 +39,8 @@ apple/
    Mac with no board attached. Configurable `transitions_per_detent` (2 or 4; check
    the actual part's datasheet).
 4. **Wiring:** A, B, switch to GPIO with `INPUT_PULLUP`, common to GND. Use Arduino
-   `D`-pin names so the same code runs on both boards. Candidate pins: A=D1, B=D2,
-   SW=D3 (avoid strapping pins; verify against each board's pinout in Phase 0).
+   `D`-pin names so the same code runs on both boards. Pins: A=D3, B=D4,
+   SW=D5 (verified non-strapping on both boards; see `docs/wiring.md`).
 5. **BLE stack: NimBLE-Arduino** (supports both C6 and S3, small footprint). Custom
    GATT service, defined in `docs/ble-protocol.md`: Value (int16, notify), Button
    (uint8, notify), Control (write, reset to 0).
@@ -57,18 +57,18 @@ apple/
 ## Phases
 
 ### Phase 0 - Toolchain and bring-up
-- [ ] Install the PlatformIO extension in VSCode (`pio` CLI already present on the Mac).
-- [ ] Confirm `platformio.ini` builds a blink/"hello" sketch for both boards;
-      fix the platform URL / board ids if not.
+- [ ] Install the PlatformIO extension in VSCode. Note: the Homebrew `pio` runs on Python 3.15, which the
+      platform rejects; use `~/.platformio/penv/bin/pio` (Python 3.11), which the extension also uses.
+- [x] `platformio.ini` builds for both boards (C6 and S3 build verified).
 - [ ] Confirm upload and the USB serial monitor work on both boards
       (`ARDUINO_USB_CDC_ON_BOOT=1`; may need the boot button for the first flash).
-- [ ] Wire the encoder; record pins and a wiring diagram in `docs/wiring.md`.
-- [ ] Add `firmware/.vscode/extensions.json`.
+- [x] Pins chosen and recorded in `docs/wiring.md`; [ ] encoder wired.
+- [x] Add `firmware/.vscode/extensions.json`.
 
 ### Phase 1 - Encoder over USB serial
-- [ ] Write `EncoderDecoder` + host unit tests (`native` env): clean rotation both
-      directions, bounce/glitch sequences, missed-edge recovery, button debounce.
-- [ ] `main.cpp`: 1 kHz sampling, clamped counter, print `value=<n> btn=<0|1>` on change.
+- [x] `EncoderDecoder` + host unit tests (`native` env): 18 tests pass (rotation both
+      directions, bounce/glitch sequences, missed-edge recovery, button debounce, clamping).
+- [x] `main.cpp` (builds for both boards; not yet run on hardware): 1 kHz sampling, clamped counter, print `value=<n> btn=<0|1>` on change.
 - [ ] Verify on both boards with the real encoder: one detent = exactly one count,
       no phantom counts or reversals when turning fast or slowly, clean button press.
 - [ ] Tune `transitions_per_detent` and debounce times; note results in `docs/wiring.md`.
@@ -105,4 +105,4 @@ Done when: all three devices show the live value and LED from either board.
 - Minimum OS versions for the app.
 
 ## Verification notes
-Nothing here has been built yet. `platformio.ini` and the GATT UUIDs are drafts.
+Built OK for C6 and S3; 18 host tests pass. Not yet flashed or tested on real hardware. The GATT UUIDs are drafts.
