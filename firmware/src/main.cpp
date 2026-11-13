@@ -3,12 +3,13 @@
 #include <Arduino.h>
 #include "EncoderDecoder.h"
 
-// Same Arduino D-pin names on both boards (none are strapping pins):
-//   C6: D3=GPIO21 D4=GPIO22 D5=GPIO23     S3: D3=GPIO4 D4=GPIO5 D5=GPIO6
+// Same Arduino D-pin names on both boards. Avoids the default I2C (D4/D5), UART (D6/D7)
+// and SPI (D8-D10) pins.
+//   C6: D0=GPIO0 D1=GPIO1 D2=GPIO2     S3: D0=GPIO1 D1=GPIO2 D2=GPIO3
 // Encoder common and the other side of the button go to GND; internal pull-ups are used.
-static const uint8_t PIN_A = D3;   // encoder A (CLK)
-static const uint8_t PIN_B = D4;   // encoder B (DT)
-static const uint8_t PIN_SW = D5;  // push button
+static const uint8_t PIN_A = D0;   // encoder A (CLK)
+static const uint8_t PIN_B = D1;   // encoder B (DT)
+static const uint8_t PIN_SW = D2;  // push button
 
 static const uint32_t SAMPLE_US = 1000;  // 1 kHz
 

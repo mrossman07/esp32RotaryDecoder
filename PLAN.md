@@ -39,8 +39,8 @@ apple/
    Mac with no board attached. Configurable `transitions_per_detent` (2 or 4; check
    the actual part's datasheet).
 4. **Wiring:** A, B, switch to GPIO with `INPUT_PULLUP`, common to GND. Use Arduino
-   `D`-pin names so the same code runs on both boards. Pins: A=D3, B=D4,
-   SW=D5 (verified non-strapping on both boards; see `docs/wiring.md`).
+   `D`-pin names so the same code runs on both boards. Pins: A=D0, B=D1,
+   SW=D2 (leaves I2C D4/D5, UART and SPI pins free; see `docs/wiring.md`).
 5. **BLE stack: NimBLE-Arduino** (supports both C6 and S3, small footprint). Custom
    GATT service, defined in `docs/ble-protocol.md`: Value (int16, notify), Button
    (uint8, notify), Control (write, reset to 0).

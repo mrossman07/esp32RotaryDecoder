@@ -1,20 +1,29 @@
 # Wiring
 
 Pin numbers confirmed against the Arduino-ESP32 variant files `pins_arduino.h`
-for `XIAO_ESP32C6` and `XIAO_ESP32S3`. None are strapping or USB pins on either board.
+for `XIAO_ESP32C6` and `XIAO_ESP32S3`.
 
 | Signal | Arduino pin | C6 GPIO | S3 GPIO | Encoder pin |
 |--------|-------------|---------|---------|-------------|
-| A (CLK) | D3 | 21 | 4 | A / CLK |
-| B (DT)  | D4 | 22 | 5 | B / DT |
-| Button  | D5 | 23 | 6 | SW |
+| A (CLK) | D0 | 0 | 1 | A / CLK |
+| B (DT)  | D1 | 1  | 2 | B / DT |
+| Button  | D2 | 2  | 3 | SW |
 | GND     | GND | | | C (common) and the other SW pin |
+
+## Pins deliberately avoided
+
+- D4/D5: default I2C `SDA`/`SCL` (C6 GPIO22/23, S3 GPIO5/6), kept free for sensors/displays.
+- D6/D7: UART `TX`/`RX`. D8-D10: SPI `SCK`/`MISO`/`MOSI`.
+- D3: unused and free (C6 GPIO21, S3 GPIO4).
+- S3 D2 is GPIO3, a strapping pin (selects the JTAG source only; does not affect boot mode),
+  so it is fine for the button.
+
+## Notes
 
 - No external resistors: the firmware enables the internal pull-ups (`INPUT_PULLUP`).
   All inputs read high at rest and low when closed; the button is active low.
 - If contact bounce proves worse than the software debounce can handle, add 10 kohm pull-up
   plus 10-100 nF from each line to GND (RC filter).
-- The pin choice was moved off D2 (S3 GPIO3 is a strapping pin).
 
 ## Tuning notes (fill in after testing with the real encoder)
 

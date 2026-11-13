@@ -30,7 +30,7 @@ pio test -e native                   # host unit tests, no hardware needed
 
 - Debounce is in software (state-table quadrature decoder plus integrator for the button), not
   GPIO interrupts. Keep hardware-specific code out of `EncoderDecoder`.
-- Use Arduino `D`-pin names (`D1`, `D2`, `D3`), not raw GPIO numbers, so both boards share code.
+- Use Arduino `D`-pin names (`D0`, `D1`, `D2`), not raw GPIO numbers, so both boards share code.
   Avoid strapping pins. Pin choices go in `docs/wiring.md`.
 - Firmware owns the value and clamps to [-100, 100]. The app is display-only.
 - Any change to the BLE service, characteristics or formats must be made in `docs/ble-protocol.md`
@@ -44,4 +44,4 @@ pio test -e native                   # host unit tests, no hardware needed
 ## Status
 
 Phase 1 code written: builds for C6 and S3, 18 host tests pass. Not yet flashed or tested with the
-real encoder. Pins: A=D3, B=D4, SW=D5 (`docs/wiring.md`).
+real encoder. Pins: A=D0, B=D1, SW=D2 (`docs/wiring.md`).
