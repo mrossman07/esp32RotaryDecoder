@@ -93,9 +93,9 @@ Done when: nRF Connect shows correct notifications on both boards. (C6 done; S3 
       Verified against the real C6 from the Mac app and iPad.
 - [x] UI: large integer, gauge (-100...100), "LED" that lights while the button is pressed, connection
       status, reset button. Checked in the iOS simulator using the animated mock.
-- [ ] Run on a real iPhone, iPad and Mac (Bluetooth does not work in the iOS simulator). Mac and iPad confirmed; iPhone pending.
+- [x] Run on a real iPhone, iPad and Mac (Bluetooth does not work in the iOS simulator). All three confirmed with the C6.
 
-Done when: all three devices show the live value and LED from either board.
+Done when: all three devices show the live value and LED from either board. (Done with the C6; the S3 is untested on hardware.)
 
 ### Phase 4 - Polish (optional)
 - Reconnect robustness, multiple-peripheral picker, bonding, battery/power, enclosure.

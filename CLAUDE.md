@@ -62,4 +62,4 @@ pio test -e native                   # host unit tests, no hardware needed
 Phases 1 and 2 done on the C6 (A=D0, B=D1, SW=D2, module "+" to 3V3; see `docs/wiring.md`); BLE verified with
 nRF Connect on iPhone. Phase 3: the `EncoderBLE` package and the SwiftUI app are written, tests pass, and the
 app builds for macOS and the iOS simulator and renders correctly with the mock. Confirmed working with the real
-device on a Mac and an iPad; iPhone not yet checked. The S3 is untested on hardware.
+device on a Mac, iPad and iPhone. Phase 3 is complete. The S3 is untested on hardware.
