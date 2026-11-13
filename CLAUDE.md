@@ -43,5 +43,6 @@ pio test -e native                   # host unit tests, no hardware needed
 
 ## Status
 
-Phase 1 code written: builds for C6 and S3, 18 host tests pass. Not yet flashed or tested with the
-real encoder. Pins: A=D0, B=D1, SW=D2 (`docs/wiring.md`).
+Phases 1 and 2 done on the C6 (A=D0, B=D1, SW=D2, module "+" to 3V3; see `docs/wiring.md`). BLE firmware
+(`lib/EncoderBle`, NimBLE-Arduino 2.5.2) verified with nRF Connect on iPhone: value and button notifications,
+reset write, reconnect. The S3 builds but is untested on hardware. Next: Phase 3, the Apple demo app.

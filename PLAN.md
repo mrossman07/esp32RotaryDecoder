@@ -68,21 +68,21 @@ apple/
 ### Phase 1 - Encoder over USB serial
 - [x] `EncoderDecoder` + host unit tests (`native` env): 18 tests pass (rotation both
       directions, bounce/glitch sequences, missed-edge recovery, button debounce, clamping).
-- [x] `main.cpp` (builds for both boards; not yet run on hardware): 1 kHz sampling, clamped counter, print `value=<n> btn=<0|1>` on change.
-- [ ] Verify on both boards with the real encoder (C6: 1 detent = 1 count confirmed; S3 and fast-turn/bounce checks pending): one detent = exactly one count,
+- [x] `main.cpp` (builds for both boards; runs on the C6): 1 kHz sampling, clamped counter, print `value=<n> btn=<0|1>` on change.
+- [x] Verify with the real encoder (checked on the C6 only; the S3 runs the same code but is untested): one detent = exactly one count,
       no phantom counts or reversals when turning fast or slowly, clean button press.
-- [ ] Tune `transitions_per_detent` and debounce times; note results in `docs/wiring.md`.
+- [x] Tune `transitions_per_detent` (4) and debounce times (10 ms); note results in `docs/wiring.md`.
 
 Done when: turning the knob prints correct, stable counts on both boards.
 
 ### Phase 2 - BLE peripheral (firmware)
-- [ ] Add NimBLE-Arduino to `lib_deps`; implement `EncoderBle` per `docs/ble-protocol.md`.
-- [ ] Notify on value change and on button press/release; support read on connect
-      and the reset control write; restart advertising on disconnect.
-- [ ] Test with nRF Connect (iOS/Mac) before any app exists.
-- [ ] Keep serial output as a debug log.
+- [x] NimBLE-Arduino 2.5.2 in `lib_deps`; `EncoderBle` implemented per `docs/ble-protocol.md` (builds on C6 and S3).
+- [x] Notify on value change and on button press/release (rate limited, retried until delivered); read on connect,
+      reset control write, advertising restarts on disconnect. Verified on the C6 with nRF Connect.
+- [x] Tested with nRF Connect on iPhone (C6): value and button notify, reset write, reconnect all work.
+- [x] Serial output kept as a debug log (now also shows `ble=connected|advertising`).
 
-Done when: nRF Connect shows correct notifications on both boards.
+Done when: nRF Connect shows correct notifications on both boards. (C6 done; S3 untested on hardware.)
 
 ### Phase 3 - Apple demo app
 - [ ] In Xcode create a multiplatform App (SwiftUI) in `apple/EncoderDemo/`; add
