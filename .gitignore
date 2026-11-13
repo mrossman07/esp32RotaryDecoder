@@ -11,3 +11,7 @@ DerivedData/
 build/
 *.xcuserstate
 .swiftpm/
+
+# Per-developer Xcode settings (signing team)
+apple/EncoderDemo/Config/Local.xcconfig
+.build/
