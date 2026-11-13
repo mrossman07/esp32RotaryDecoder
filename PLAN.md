@@ -62,14 +62,14 @@ apple/
 - [x] `platformio.ini` builds for both boards (C6 and S3 build verified).
 - [ ] Confirm upload and the USB serial monitor work on both boards
       (`ARDUINO_USB_CDC_ON_BOOT=1`; may need the boot button for the first flash).
-- [x] Pins chosen and recorded in `docs/wiring.md`; [ ] encoder wired.
+- [x] Pins chosen and recorded in `docs/wiring.md`; [x] encoder wired on the C6 (module "+" pin to 3V3).
 - [x] Add `firmware/.vscode/extensions.json`.
 
 ### Phase 1 - Encoder over USB serial
 - [x] `EncoderDecoder` + host unit tests (`native` env): 18 tests pass (rotation both
       directions, bounce/glitch sequences, missed-edge recovery, button debounce, clamping).
 - [x] `main.cpp` (builds for both boards; not yet run on hardware): 1 kHz sampling, clamped counter, print `value=<n> btn=<0|1>` on change.
-- [ ] Verify on both boards with the real encoder: one detent = exactly one count,
+- [ ] Verify on both boards with the real encoder (C6: 1 detent = 1 count confirmed; S3 and fast-turn/bounce checks pending): one detent = exactly one count,
       no phantom counts or reversals when turning fast or slowly, clean button press.
 - [ ] Tune `transitions_per_detent` and debounce times; note results in `docs/wiring.md`.
 

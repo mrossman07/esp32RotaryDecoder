@@ -22,12 +22,16 @@ for `XIAO_ESP32C6` and `XIAO_ESP32S3`.
 
 - No external resistors: the firmware enables the internal pull-ups (`INPUT_PULLUP`).
   All inputs read high at rest and low when closed; the button is active low.
+- **Encoder module "+" pin must go to 3V3.** The module has 10K resistors from CLK and DT to
+  "+". Left unconnected they form a 20K link between CLK and DT, which drags the idle line low
+  when the other closes, so no valid quadrature states appear and the decoder counts nothing.
+  Connecting "+" to 3V3 (never 5V) makes them proper pull-ups. Verified on the C6.
 - If contact bounce proves worse than the software debounce can handle, add 10 kohm pull-up
   plus 10-100 nF from each line to GND (RC filter).
 
 ## Tuning notes (fill in after testing with the real encoder)
 
 - Encoder part number: _unknown_
-- Transitions per detent (`transitions_per_detent`): _4 assumed_
+- Transitions per detent (`transitions_per_detent`): 4 (verified on C6: one detent = one count)
 - Clockwise gives positive counts? (`invert`): _not yet checked_
 - Button debounce time: _10 ms assumed_
