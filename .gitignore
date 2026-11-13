@@ -1,0 +1,13 @@
+.DS_Store
+
+# PlatformIO
+firmware/.pio/
+firmware/.vscode/*
+!firmware/.vscode/extensions.json
+
+# Xcode
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+.swiftpm/
