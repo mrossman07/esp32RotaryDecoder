@@ -189,8 +189,114 @@ void test_counter_clamps() {
   TEST_ASSERT_EQUAL(0, c.value());
 }
 
+// ---- ButtonGestures ----
+
+// Starts released at t=0 so the gesture detector is primed.
+static ButtonGestures primedGestures(uint16_t longMs = 1000) {
+  ButtonGestures g(longMs);
+  g.update(false, 0);
+  return g;
+}
+
+void test_gesture_short_tap_reported_on_release() {
+  ButtonGestures g = primedGestures();
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, 100));
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, 150));
+  TEST_ASSERT_EQUAL(Gesture::ShortTap, g.update(false, 180));
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(false, 181));
+}
+
+void test_gesture_just_under_threshold_is_tap() {
+  ButtonGestures g = primedGestures();
+  g.update(true, 100);
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, 1099));  // held 999 ms
+  TEST_ASSERT_EQUAL(Gesture::ShortTap, g.update(false, 1100));
+}
+
+void test_gesture_long_press_fires_at_threshold_while_held() {
+  ButtonGestures g = primedGestures();
+  g.update(true, 100);
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, 1099));
+  TEST_ASSERT_EQUAL(Gesture::LongPress, g.update(true, 1100));  // exactly 1000 ms
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, 1101));
+}
+
+void test_gesture_long_press_release_reports_nothing() {
+  ButtonGestures g = primedGestures();
+  g.update(true, 100);
+  TEST_ASSERT_EQUAL(Gesture::LongPress, g.update(true, 1100));
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(false, 1300));
+}
+
+void test_gesture_long_hold_fires_only_once() {
+  ButtonGestures g = primedGestures();
+  g.update(true, 100);
+  int longs = 0;
+  for (uint32_t t = 101; t < 6000; t++)
+    if (g.update(true, t) == Gesture::LongPress) longs++;
+  TEST_ASSERT_EQUAL(1, longs);
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(false, 6001));
+}
+
+void test_gesture_sequence_tap_long_tap() {
+  ButtonGestures g = primedGestures();
+  g.update(true, 100);
+  TEST_ASSERT_EQUAL(Gesture::ShortTap, g.update(false, 160));
+  g.update(true, 300);
+  TEST_ASSERT_EQUAL(Gesture::LongPress, g.update(true, 1300));
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(false, 1400));
+  g.update(true, 1500);
+  TEST_ASSERT_EQUAL(Gesture::ShortTap, g.update(false, 1560));
+}
+
+void test_gesture_millis_wraparound() {
+  ButtonGestures g = primedGestures();
+  const uint32_t t0 = 0xFFFFFF00u;  // press just before the 32-bit wrap
+  g.update(true, t0);
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, t0 + 999));
+  TEST_ASSERT_EQUAL(Gesture::LongPress, g.update(true, t0 + 1000));  // wrapped past zero
+}
+
+void test_gesture_held_at_boot_is_ignored_until_released() {
+  ButtonGestures g;
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, 0));  // already held on the first sample
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(true, 2000));  // no long press for it
+  TEST_ASSERT_EQUAL(Gesture::None, g.update(false, 2100));  // and no tap on release
+  g.update(true, 3000);
+  TEST_ASSERT_EQUAL(Gesture::ShortTap, g.update(false, 3050));  // normal again
+}
+
+void test_gesture_with_debounced_button_ignores_bounce() {
+  // End to end: raw chatter -> Button debounce -> ButtonGestures gives exactly one tap.
+  Button b(10);
+  ButtonGestures g;
+  int taps = 0, longs = 0;
+  auto step = [&](bool raw, uint32_t t) {
+    b.update(raw, t);
+    Gesture r = g.update(b.pressed(), t);
+    if (r == Gesture::ShortTap) taps++;
+    if (r == Gesture::LongPress) longs++;
+  };
+  step(false, 0);
+  for (uint32_t t = 100; t < 112; t += 2) step(((t / 2) & 1) != 0, t);  // chatter on press
+  for (uint32_t t = 112; t < 200; t++) step(true, t);
+  for (uint32_t t = 200; t < 212; t += 2) step(((t / 2) & 1) == 0, t);  // chatter on release
+  for (uint32_t t = 212; t < 300; t++) step(false, t);
+  TEST_ASSERT_EQUAL(1, taps);
+  TEST_ASSERT_EQUAL(0, longs);
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
+  RUN_TEST(test_gesture_short_tap_reported_on_release);
+  RUN_TEST(test_gesture_just_under_threshold_is_tap);
+  RUN_TEST(test_gesture_long_press_fires_at_threshold_while_held);
+  RUN_TEST(test_gesture_long_press_release_reports_nothing);
+  RUN_TEST(test_gesture_long_hold_fires_only_once);
+  RUN_TEST(test_gesture_sequence_tap_long_tap);
+  RUN_TEST(test_gesture_millis_wraparound);
+  RUN_TEST(test_gesture_held_at_boot_is_ignored_until_released);
+  RUN_TEST(test_gesture_with_debounced_button_ignores_bounce);
   RUN_TEST(test_one_detent_clockwise);
   RUN_TEST(test_one_detent_counterclockwise);
   RUN_TEST(test_step_emitted_on_final_transition_only);

@@ -28,6 +28,8 @@ static enc::Config makeConfig() {
 static enc::Decoder decoder(makeConfig());
 static enc::Button button(10);
 static enc::ClampedCounter counter(-100, 100);
+static enc::ButtonGestures gestures(1000);  // long press = held for 1000 ms
+static bool latch = false;                  // flips on each long press (owned here, shown by the app)
 static EncoderBle ble;
 
 static uint32_t nextSample = 0;
@@ -63,6 +65,18 @@ void loop() {
 
   // Button is active low.
   if (button.update(digitalRead(PIN_SW) == LOW, millis())) changed = true;
+
+  // Short tap (reported on release) or long press (reported at the 1 s mark while held).
+  const enc::Gesture gesture = gestures.update(button.pressed(), millis());
+  if (gesture == enc::Gesture::ShortTap) {
+    Serial.println("gesture=tap");
+    ble.sendGesture(EncoderBle::GESTURE_SHORT_TAP);
+  } else if (gesture == enc::Gesture::LongPress) {
+    latch = !latch;
+    ble.setLatch(latch);
+    Serial.printf("gesture=long latch=%d\n", latch ? 1 : 0);
+    ble.sendGesture(EncoderBle::GESTURE_LONG_PRESS);
+  }
 
   // Reset from the serial monitor ('r') or from a BLE central (Control = 0x01).
   const bool serialReset = Serial.available() && Serial.read() == 'r';

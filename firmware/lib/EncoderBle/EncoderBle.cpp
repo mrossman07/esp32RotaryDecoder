@@ -2,6 +2,9 @@
 
 // Minimum spacing between notifications of the same characteristic.
 static const uint32_t NOTIFY_MIN_INTERVAL_MS = 15;
+// A gesture still unsent after this long is stale (e.g. the central never subscribed) and
+// is dropped so the app doesn't see a burst of old taps later.
+static const uint32_t GESTURE_MAX_AGE_MS = 500;
 
 class EncoderBle::ServerCb : public NimBLEServerCallbacks {
  public:
@@ -48,6 +51,12 @@ void EncoderBle::begin() {
   NimBLECharacteristic* control = svc->createCharacteristic(CONTROL_UUID, NIMBLE_PROPERTY::WRITE);
   control->setCallbacks(new ControlCb(*this));
 
+  gesture_ = svc->createCharacteristic(GESTURE_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  gesture_->setValue<uint8_t>(0);
+
+  latch_ = svc->createCharacteristic(LATCH_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  latch_->setValue<uint8_t>(latchNow_);
+
   // Advertisement: flags + the 128-bit service UUID (so apps can scan by service).
   // The name goes in the scan response; both together would not fit in 31 bytes.
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
@@ -78,10 +87,33 @@ void EncoderBle::setButton(bool pressed) {
   buttonDirty_ = true;
 }
 
+void EncoderBle::setLatch(bool on) {
+  const uint8_t l = on ? 1 : 0;
+  if (l == latchNow_) return;
+  latchNow_ = l;
+  latch_->setValue<uint8_t>(l);
+  latchDirty_ = true;
+}
+
+void EncoderBle::sendGesture(uint8_t code) {
+  if (!connected_) return;  // nobody to tell; a reconnect reads Latch for the state
+  if (gestureCount_ == GESTURE_QUEUE_SIZE) {  // full: drop the oldest
+    for (uint8_t i = 1; i < GESTURE_QUEUE_SIZE; i++) {
+      gestureQueue_[i - 1] = gestureQueue_[i];
+      gestureQueuedMs_[i - 1] = gestureQueuedMs_[i];
+    }
+    gestureCount_--;
+  }
+  gestureQueue_[gestureCount_] = code;
+  gestureQueuedMs_[gestureCount_] = millis();
+  gestureCount_++;
+}
+
 void EncoderBle::loop(uint32_t nowMs) {
   if (!connected_) {
     // Nobody to notify; the next connection reads the current values.
-    valueDirty_ = buttonDirty_ = false;
+    valueDirty_ = buttonDirty_ = latchDirty_ = false;
+    gestureCount_ = 0;
     return;
   }
   // notify() fails if the central has not subscribed yet or the stack is out of buffers.
@@ -94,6 +126,30 @@ void EncoderBle::loop(uint32_t nowMs) {
   if (buttonDirty_ && (uint32_t)(nowMs - lastButtonMs_) >= NOTIFY_MIN_INTERVAL_MS) {
     if (button_->notify()) buttonDirty_ = false;
     lastButtonMs_ = nowMs;
+  }
+  if (latchDirty_ && (uint32_t)(nowMs - lastLatchMs_) >= NOTIFY_MIN_INTERVAL_MS) {
+    if (latch_->notify()) latchDirty_ = false;
+    lastLatchMs_ = nowMs;
+  }
+
+  // Gestures are events: send each one in order, never coalesced.
+  while (gestureCount_ > 0 && (uint32_t)(nowMs - gestureQueuedMs_[0]) > GESTURE_MAX_AGE_MS) {
+    for (uint8_t i = 1; i < gestureCount_; i++) {
+      gestureQueue_[i - 1] = gestureQueue_[i];
+      gestureQueuedMs_[i - 1] = gestureQueuedMs_[i];
+    }
+    gestureCount_--;
+  }
+  if (gestureCount_ > 0 && (uint32_t)(nowMs - lastGestureMs_) >= NOTIFY_MIN_INTERVAL_MS) {
+    gesture_->setValue<uint8_t>(gestureQueue_[0]);
+    if (gesture_->notify()) {
+      for (uint8_t i = 1; i < gestureCount_; i++) {
+        gestureQueue_[i - 1] = gestureQueue_[i];
+        gestureQueuedMs_[i - 1] = gestureQueuedMs_[i];
+      }
+      gestureCount_--;
+    }
+    lastGestureMs_ = nowMs;
   }
 }
 

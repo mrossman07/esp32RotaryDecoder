@@ -6,12 +6,14 @@ public final class MockTransport: EncoderTransport {
 
     private let autoDemo: Bool
     private var value = 0
+    private var latch = false
     private var direction = 1
     private var ticks = 0
     private var timer: Timer?
 
     /// - Parameter autoDemo: when true, the value sweeps up and down and the button
-    ///   toggles on its own, so the UI can be seen working without hardware.
+    ///   taps and long presses happen on their own, so the UI can be seen working
+    ///   without hardware.
     public init(autoDemo: Bool = false) {
         self.autoDemo = autoDemo
     }
@@ -21,6 +23,7 @@ public final class MockTransport: EncoderTransport {
         onEvent?(.state(.connected))
         onEvent?(.value(value))
         onEvent?(.button(false))
+        onEvent?(.latch(latch))
         if autoDemo { startTimer() }
     }
 
@@ -41,9 +44,21 @@ public final class MockTransport: EncoderTransport {
         onEvent?(.value(value))
     }
 
-    /// Simulates pressing or releasing the button.
+    /// Simulates pressing or releasing the raw button.
     public func press(_ pressed: Bool) {
         onEvent?(.button(pressed))
+    }
+
+    /// Simulates a short tap on the push button.
+    public func tap() {
+        onEvent?(.gesture(.shortTap))
+    }
+
+    /// Simulates a long press: the firmware flips the latch and reports the gesture.
+    public func longPress() {
+        latch.toggle()
+        onEvent?(.latch(latch))
+        onEvent?(.gesture(.longPress))
     }
 
     private func startTimer() {
@@ -56,7 +71,7 @@ public final class MockTransport: EncoderTransport {
         ticks += 1
         if abs(value) >= 40 { direction = value > 0 ? -1 : 1 }
         turn(by: direction)
-        if ticks % 12 == 0 { press(true) }
-        if ticks % 12 == 6 { press(false) }
+        if ticks % 20 == 0 { tap() }        // every 3 s
+        if ticks % 50 == 25 { longPress() } // every 7.5 s
     }
 }

@@ -107,17 +107,22 @@ extension CoreBluetoothTransport: CBCentralManagerDelegate {
 extension CoreBluetoothTransport: CBPeripheralDelegate {
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let service = peripheral.services?.first(where: { $0.uuid == EncoderGATT.service }) else { return }
+        // Gesture and Latch are missing on older firmware; whatever is found is used.
         peripheral.discoverCharacteristics(
-            [EncoderGATT.value, EncoderGATT.button, EncoderGATT.control], for: service)
+            [EncoderGATT.value, EncoderGATT.button, EncoderGATT.control,
+             EncoderGATT.gesture, EncoderGATT.latch], for: service)
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService,
                            error: Error?) {
         for characteristic in service.characteristics ?? [] {
             switch characteristic.uuid {
-            case EncoderGATT.value, EncoderGATT.button:
+            case EncoderGATT.value, EncoderGATT.button, EncoderGATT.latch:
                 peripheral.setNotifyValue(true, for: characteristic)
                 peripheral.readValue(for: characteristic)  // current state on connect
+            case EncoderGATT.gesture:
+                // Events only: do NOT read it, or the last event would replay on connect.
+                peripheral.setNotifyValue(true, for: characteristic)
             case EncoderGATT.control:
                 controlCharacteristic = characteristic
             default:
@@ -135,6 +140,10 @@ extension CoreBluetoothTransport: CBPeripheralDelegate {
             if let v = EncoderGATT.parseValue(data) { onEvent?(.value(v)) }
         case EncoderGATT.button:
             if let b = EncoderGATT.parseButton(data) { onEvent?(.button(b)) }
+        case EncoderGATT.gesture:
+            if let g = EncoderGATT.parseGesture(data) { onEvent?(.gesture(g)) }
+        case EncoderGATT.latch:
+            if let l = EncoderGATT.parseLatch(data) { onEvent?(.latch(l)) }
         default:
             break
         }

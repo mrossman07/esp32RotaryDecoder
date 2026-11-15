@@ -93,6 +93,57 @@ class Button {
   uint32_t since_ = 0;
 };
 
+enum class Gesture : uint8_t {
+  None = 0,
+  ShortTap = 1,   // matches the BLE Gesture codes in docs/ble-protocol.md
+  LongPress = 2,
+};
+
+// Classifies the DEBOUNCED button state into short taps and long presses.
+// A short tap is a press released in under long_press_ms and is reported on release.
+// A long press is reported once, when the hold reaches long_press_ms (the release
+// afterwards reports nothing).
+class ButtonGestures {
+ public:
+  explicit ButtonGestures(uint16_t long_press_ms = 1000) : long_ms_(long_press_ms) {}
+
+  // Call every tick with the debounced pressed state.
+  Gesture update(bool pressed, uint32_t now_ms) {
+    if (!primed_) {
+      primed_ = true;
+      if (pressed) {  // button already held at boot: ignore it until released
+        down_ = true;
+        fired_ = true;
+        since_ = now_ms;
+      }
+      return Gesture::None;
+    }
+    if (pressed && !down_) {
+      down_ = true;
+      fired_ = false;
+      since_ = now_ms;
+      return Gesture::None;
+    }
+    if (pressed && down_) {
+      if (!fired_ && (uint32_t)(now_ms - since_) >= long_ms_) {
+        fired_ = true;
+        return Gesture::LongPress;
+      }
+      return Gesture::None;
+    }
+    if (!pressed && down_) {
+      down_ = false;
+      return fired_ ? Gesture::None : Gesture::ShortTap;
+    }
+    return Gesture::None;
+  }
+
+ private:
+  uint16_t long_ms_;
+  bool primed_ = false, down_ = false, fired_ = false;
+  uint32_t since_ = 0;
+};
+
 // Integer that saturates at [lo, hi].
 class ClampedCounter {
  public:

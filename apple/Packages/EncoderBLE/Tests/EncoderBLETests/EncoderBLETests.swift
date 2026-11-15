@@ -29,6 +29,25 @@ final class GATTTests: XCTestCase {
         XCTAssertEqual(EncoderGATT.parseValue(backing[1...2]), 5)
     }
 
+    func testGestureAndLatchUUIDsMatchProtocolDoc() {
+        XCTAssertEqual(EncoderGATT.gesture.uuidString.lowercased(), "7670a629-c062-4b70-a4de-09594771dbcb")
+        XCTAssertEqual(EncoderGATT.latch.uuidString.lowercased(), "b429c943-136e-45bb-849c-eeb677d6bf00")
+    }
+
+    func testParseGesture() {
+        XCTAssertEqual(EncoderGATT.parseGesture(Data([0x01])), .shortTap)
+        XCTAssertEqual(EncoderGATT.parseGesture(Data([0x02])), .longPress)
+        XCTAssertNil(EncoderGATT.parseGesture(Data([0x00])))  // "none yet"
+        XCTAssertNil(EncoderGATT.parseGesture(Data([0x7F])))  // unknown code
+        XCTAssertNil(EncoderGATT.parseGesture(Data()))
+    }
+
+    func testParseLatch() {
+        XCTAssertEqual(EncoderGATT.parseLatch(Data([0x00])), false)
+        XCTAssertEqual(EncoderGATT.parseLatch(Data([0x01])), true)
+        XCTAssertNil(EncoderGATT.parseLatch(Data()))
+    }
+
     func testParseButton() {
         XCTAssertEqual(EncoderGATT.parseButton(Data([0x00])), false)
         XCTAssertEqual(EncoderGATT.parseButton(Data([0x01])), true)
@@ -79,6 +98,54 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(model.value, 100)
         mock.turn(by: -500)
         XCTAssertEqual(model.value, -100)
+    }
+
+    func testShortTapsAreCounted() {
+        let mock = MockTransport()
+        let model = EncoderModel(transport: mock)
+        model.start()
+        XCTAssertEqual(model.shortTapCount, 0)
+        mock.tap()
+        XCTAssertEqual(model.shortTapCount, 1)
+        mock.tap()
+        mock.tap()
+        XCTAssertEqual(model.shortTapCount, 3)
+    }
+
+    func testLongPressTogglesLatchWithoutCountingATap() {
+        let mock = MockTransport()
+        let model = EncoderModel(transport: mock)
+        model.start()
+        XCTAssertFalse(model.latched)
+        mock.longPress()
+        XCTAssertTrue(model.latched)
+        XCTAssertEqual(model.shortTapCount, 0)
+        mock.longPress()
+        XCTAssertFalse(model.latched)
+    }
+
+    func testLatchSurvivesReconnect() {
+        let mock = MockTransport()
+        let model = EncoderModel(transport: mock)
+        model.start()
+        mock.longPress()
+        XCTAssertTrue(model.latched)
+        // A reconnect reads Latch again; the device's state is what the model shows.
+        model.handle(.state(.scanning))
+        model.handle(.state(.connected))
+        model.handle(.latch(true))
+        XCTAssertTrue(model.latched)
+    }
+
+    func testResetDoesNotClearLatch() {
+        let mock = MockTransport()
+        let model = EncoderModel(transport: mock)
+        model.start()
+        mock.longPress()
+        mock.turn(by: 5)
+        model.reset()
+        XCTAssertEqual(model.value, 0)
+        XCTAssertTrue(model.latched)
     }
 
     func testDisconnectClearsButton() {

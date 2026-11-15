@@ -59,7 +59,9 @@ pio test -e native                   # host unit tests, no hardware needed
 
 ## Status
 
-Phases 1 and 2 done on the C6 (A=D0, B=D1, SW=D2, module "+" to 3V3; see `docs/wiring.md`); BLE verified with
-nRF Connect on iPhone. Phase 3: the `EncoderBLE` package and the SwiftUI app are written, tests pass, and the
-app builds for macOS and the iOS simulator and renders correctly with the mock. Confirmed working with the real
-device on a Mac, iPad and iPhone. Phase 3 is complete. The S3 is untested on hardware.
+Phases 1-3 done and verified on the C6 (A=D0, B=D1, SW=D2, module "+" to 3V3; see `docs/wiring.md`) with the
+Mac, iPad and iPhone apps. The S3 builds but is untested on hardware.
+
+Button gestures (tap vs 1 s long press; two LEDs in the app) are implemented and unit-tested in firmware and
+Swift, and checked in the simulator with the mock. Confirmed on the real C6 with the Mac app; iPad and iPhone not yet re-checked. The new BLE
+characteristics (Gesture, Latch) are in `docs/ble-protocol.md`; the raw Button characteristic is kept.

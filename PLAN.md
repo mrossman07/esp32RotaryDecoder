@@ -97,6 +97,22 @@ Done when: nRF Connect shows correct notifications on both boards. (C6 done; S3 
 
 Done when: all three devices show the live value and LED from either board. (Done with the C6; the S3 is untested on hardware.)
 
+### Feature: button gestures (short tap vs long press)
+Spec: a tap is a press released in under 1 s; a long press is a hold of 1 s or more. The app shows two
+LEDs: the left flashes on each tap, the right toggles on each long press.
+- Decisions: the firmware classifies the gestures and owns the toggle state (the "latch"); a long press fires at
+  the 1 s mark while still held; the new two LEDs replace the old "lit while pressed" LED; "Reset to 0" does not clear
+  the latch. Protocol in `docs/ble-protocol.md` (Gesture event + Latch state characteristics; raw Button kept).
+- [x] `ButtonGestures` in `EncoderDecoder.h` with 9 host tests (27 total pass).
+- [x] Firmware: Gesture (queued events, never merged) and Latch characteristics in `EncoderBle`, wired in
+      `main.cpp`; builds for C6 and S3.
+- [x] Flashed to the C6; works with the Mac app (tap flash and long-press toggle).
+- [x] Swift package: new UUIDs, parsers, `ButtonGesture`, model `shortTapCount`/`latched`, mock taps and long
+      presses; 17 tests pass.
+- [x] App: Tap LED (flashes 0.25 s) and Long press LED (toggle); checked in the simulator with the mock.
+- [ ] Verify on the real C6 with the iPad and iPhone apps (Mac confirmed). (If iOS shows stale services after the firmware
+      update, toggle Bluetooth or forget the device to clear its attribute cache.)
+
 ### Phase 4 - Polish (optional)
 - Reconnect robustness, multiple-peripheral picker, bonding, battery/power, enclosure.
 
